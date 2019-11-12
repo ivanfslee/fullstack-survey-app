@@ -6,7 +6,7 @@ const app = express(); //creating express app instance - most applications you m
 
 //incoming get request 
 app.get('/', (req, res) => {
-    res.send({ aloha: 'world' });
+    res.send({ aloha: 'coco' });
 });
 
 const PORT = process.env.PORT || 5000; //capitalized to show it shouldn't change, heroku assigns a port - using process.env.PORT - 5000 is used in our development environment 
