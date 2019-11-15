@@ -23,8 +23,8 @@ passport.use(
         {
             clientID: keys.googleClientID,
             clientSecret: keys.googleClientSecret,
-            callbackURL: 'https://thawing-falls-82253.herokuapp.com/auth/google/callback' //route user will be sent to after they give us (the app) access to their info/permission - we will make a route handler to handle this url
-            //proxy: true //if our request runs through a proxy - its okay 
+            callbackURL: '/auth/google/callback', //route user will be sent to after they give us (the app) access to their info/permission - we will make a route handler to handle this url
+            proxy: true //if our request runs through a proxy - its okay 
         }, 
         (accessToken, refreshToken, profile, done) => { //this callback function is called anytime a user was redirected back to our application from the Google flow  - 'done' tells passport we are done and continue with authentication process
             User.findOne({ googleId: profile.id }) //search query of mongoDB of collection - any access of the database is asynchronous - so this line of code returns a promise
