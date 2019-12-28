@@ -18,36 +18,59 @@ passport.deserializeUser((id, done) => { //this function turns an id (generated 
         });
 });
 
-passport.use(
-    new GoogleStrategy(//create new instance of GoogleStrategy - then have passport use the provider instance GoogleStrategy 
+
+//es 2015 syntax using promises- no async/await 
+////////////////////////////////////////
+// passport.use(
+//     new GoogleStrategy(//create new instance of GoogleStrategy - then have passport use the provider instance GoogleStrategy 
+//         {
+//             clientID: keys.googleClientID,
+//             clientSecret: keys.googleClientSecret,
+//             callbackURL: '/auth/google/callback', //route user will be sent to after they give us (the app) access to their info/permission - we will make a route handler to handle this url
+//             proxy: true //if our request runs through a proxy - its okay 
+//         }, 
+//         (accessToken, refreshToken, profile, done) => { //this callback function is called anytime a user was redirected back to our application from the Google flow  - 'done' tells passport we are done and continue with authentication process
+//             User.findOne({ googleId: profile.id }) //search query of mongoDB of collection - any access of the database is asynchronous - so this line of code returns a promise
+//                 .then((existingUser) => {//existingUser parameter represents a user who was found - it represents a model instance of a user who was found, it will be null if user not found
+//                     if (existingUser) { //if existingUser exists - if its a model instance
+//                         //we already have a record with the given profile id
+//                         console.log('User already in database')
+//                         done(null, existingUser); //null, here is the user we found 
+//                     } else { //if existingUser is null 
+//                         //we don't have a user record with this ID, make a new record
+//                         console.log('New user added')
+//                         new User({ googleId: profile.id }).save() //create mongoose model instance with a key value pair and save it to mongoDB - this is an async operation and returns a promise
+//                             .then(user => done(null, user)); //after we save it - in the callback func, we get another model instance, 'user'. 'user' and new User are both model instances and represent the same record in database, but we use 'user' because saving to DB might have added some things to it
+//                     }
+//                 }) 
+//             // console.log('access token', accessToken); //access token allows us to tell google we have this token and provides google with authenticity and that we are legit - 
+//             // console.log('refresh token', refreshToken); //refresh token - additional token to use after access token is refreshsed because access token changes over time 
+//             //console.log('profile::::', typeof profile.id); //google user profile - this contains the googleID that we want 
+//             //new User({ googleId: profile.id }) //create a new user with key value - googleId: profile.id , profile.id is the id coming from profile object - profile object is coming from google 
+//             //creating a new User only creates a model instance, we need to persist it into the mongoDB database
+//             //we need to call .save() to the new User instance in order to save it to the mongoDB
+            
+//         }
+//     )
+// ); 
+//////////////////////////////////////
+
+//refactor to es2017 async/await instead of .then
+passport.use( 
+    new GoogleStrategy(
         {
             clientID: keys.googleClientID,
             clientSecret: keys.googleClientSecret,
             callbackURL: '/auth/google/callback', //route user will be sent to after they give us (the app) access to their info/permission - we will make a route handler to handle this url
             proxy: true //if our request runs through a proxy - its okay 
         }, 
-        (accessToken, refreshToken, profile, done) => { //this callback function is called anytime a user was redirected back to our application from the Google flow  - 'done' tells passport we are done and continue with authentication process
-            User.findOne({ googleId: profile.id }) //search query of mongoDB of collection - any access of the database is asynchronous - so this line of code returns a promise
-                .then((existingUser) => {//existingUser parameter represents a user who was found - it represents a model instance of a user who was found, it will be null if user not found
-                    if (existingUser) { //if existingUser exists - if its a model instance
-                        //we already have a record with the given profile id
-                        console.log('User already in database')
-                        done(null, existingUser); //null, here is the user we found 
-                    } else { //if existingUser is null 
-                        //we don't have a user record with this ID, make a new record
-                        console.log('New user added')
-                        new User({ googleId: profile.id }).save() //create mongoose model instance with a key value pair and save it to mongoDB - this is an async operation and returns a promise
-                            .then(user => done(null, user)); //after we save it - in the callback func, we get another model instance, 'user'. 'user' and new User are both model instances and represent the same record in database, but we use 'user' because saving to DB might have added some things to it
-                    }
-                }) 
-            // console.log('access token', accessToken); //access token allows us to tell google we have this token and provides google with authenticity and that we are legit - 
-            // console.log('refresh token', refreshToken); //refresh token - additional token to use after access token is refreshsed because access token changes over time 
-            //console.log('profile::::', typeof profile.id); //google user profile - this contains the googleID that we want 
-            //new User({ googleId: profile.id }) //create a new user with key value - googleId: profile.id , profile.id is the id coming from profile object - profile object is coming from google 
-            //creating a new User only creates a model instance, we need to persist it into the mongoDB database
-            //we need to call .save() to the new User instance in order to save it to the mongoDB
-            
-        }
+        async (accessToken, refreshToken, profile, done) => {
+            const existingUser = await User.findOne({ googleId: profile.id })
+            if (existingUser) {
+                return done(null, existingUser);
+            } 
+            const user = await new User({ googleId: profile.id }).save()
+            done(null, user);
+        } //req.user in billingRoutes.js gets assigned by passport. when request comes in, passport looks at the cookie and says ok, is there a user id here, if there is, assign it a user model to the request - 
     )
-); 
-
+);
